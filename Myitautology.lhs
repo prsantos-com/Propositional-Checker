@@ -12,23 +12,29 @@ Propositional checker
 module Myitautology where
 
 import Char
-import Parsing
+--import Parsing
 import System.IO
+import Text.ParserCombinators.Parsec --this uses Parsec2
+
+import qualified Data.Set as Set
+import Data.Set (Set) 
 \end{code}
 
 First our data type is defined which represents common propositional logic
 connectives such as Or, And, Implies, etc.
 
-\begin{code}
+\begin{code} 
+type Var = Char
+
 data Prop                     =  Const Bool
-                               |  Var Char
+                               |  Var Var
                                |  Not Prop
                                |  And Prop Prop
                                |  Or Prop Prop
                                |  Imply Prop Prop
                                |  Equiv Prop Prop
                                |  Equal Prop Prop
-                              deriving(Show)
+                              deriving(Show, Eq)
 \end{code}
 
 Subst will act kind of like a substitution since it doesn't really substitute
@@ -44,7 +50,10 @@ definition which only requires two different types, that may or may not be
 Char and Bool.
 
 \begin{code}
+
 type Assoc k v                =  [(k,v)]
+type Rel k v = Set (k,v)
+--type Fct k v = Map.Map k v
 \end{code}
 
 find will take a variable(k) and table of variables to bools and find the first
@@ -134,39 +143,58 @@ cleanSubst (s:subs) p           =  if eval s p then
                                         s:cleanSubst subs p
                                    else
                                         cleanSubst subs p
+-- |eval s p = flip eval p s = s `eval` p = (`eval` p) s = (\ s -> eval s p) s|
+-- |flip cleanSubst p = filter (flip eval p)|
 
+-- This will purge the substition list of any substitutions that do not satisfy
+-- the given restrictions. ie, A /= B
 readySubst                      :: [Subst] -> Rests -> [Subst]
 readySubst subs  []             =  subs
 readySubst subs  (p:ps)         =  readySubst (cleanSubst subs p) ps
 
-{-
-substSubset                     :: Subst -> Prop -> Subst
-substSubset sub p               =  [ | s <- sub, and [sub 
+-- This will create the one part of the final substitution list
+keepSubst                         :: [Subst] -> Set.Set (Char, Bool) -> [(Subst, Subst)]
+keepSubst subs set1               
+                = [(s, Set.toList set1) | s <- subs, set1 `Set.isSubsetOf` Set.fromList s]
 
--- This function will make a new subset Subst list for a proposition with less
--- variables, but with the same variables
-substSubset                     :: Subst -> Prop -> Bool -> Subst
-substSubset sub p               =  [ | s <- sub, or [
-                                       where vs = rmdups (vars p) 
--}
-
--- This function will pair two substitutions with the same variable values
--- even if one substition is a subset of the other
---contraFree                      :: Subst -> Subst -> Bool
---contraFree  
-
+-- This will create the final substitution list. The first arguments should
+-- take a larger clean substitution list and a smaller substitution list
+-- if the last substitution list is of equal size, then isEquiv should be
+-- used instead
+finalSubst                      :: [Subst] -> [Subst] -> [(Subst, Subst)]
+finalSubst subs1 subs2        
+                        =  foldl (++) [] [ keepSubst subs1 (Set.fromList s) | s <- subs2 ] 
 
 -- This function works with two propositions that have the same amount of
 -- variables. Boring, I know.
-isEquiv                         :: Prop -> Prop -> Bool
-isEquiv p1 p2                   =  and [eval s p1 == eval s p2 | s <- substs p1]
+isEquiv                         :: Prop -> Prop -> Rests -> Bool
+isEquiv p1 p2 r                 =  if p1 == p2 then
+                                        True
+                                   else
+                                        and [eval s p1 == eval s p2 | s <- subs]
+                                          where subs = readySubst (substs p1) r
+
+-- This function works with two propositions that have an unequal amount of
+-- variables. The substitution list always has the propositions with more
+-- variables p1.
+isEquiv'                        :: Prop -> Prop -> [(Subst,Subst)] -> Bool
+isEquiv' p1 p2 subs             =  and [eval s1 p1 == eval s2 p2 | (s1,s2) <- subs]
 
 
+-- Give propMachine two propositions and it's restrictions and it will tell you
+-- If they are equivalent
+propMachine                     :: Prop -> Prop -> Rests -> Bool
+propMachine p1 p2 r             =  if varLp1 > varLp2 then
+                                        isEquiv' p1 p2 (finalSubst (cSub1) (substs p2))
 
---isEquivRes                      :: Prop -> Prop -> Rests -> Bool
---isEquivRes p1 p2 r              =  and [eval s p1 == eval s p2 | s <- substs p1]
-
-
+                                   else if varLp2 > varLp1 then
+                                        isEquiv' p2 p1 (finalSubst (cSub2) (substs p1))
+                                   else
+                                        isEquiv p1 p2 r
+                                        where cSub1 = readySubst (substs p1) r
+                                              cSub2 = readySubst (substs p2) r
+                                              varLp1 = length (rmdups (vars p1))
+                                              varLp2 = length (rmdups (vars p2))
 \end{code}
 
 \begin{code}
@@ -199,74 +227,81 @@ p8  =  Imply (Var 'A') (Or (Var 'B') (Var 'C'))
 p9  :: Prop
 p9  =  Or (Imply (Var 'A') (Var 'B')) (Imply (Var 'A') (Var 'C'))
 
+-- Ladies or Tigers example
+
 p10 :: Prop
 p10 =  Equiv (Var 'a') (Var 'd')
 
 p11 :: Prop
 p11 =  And (Or (Var 'a') (Var 'b')) (Or (Var 'c') (Var 'd'))
 
-p1011Res1 :: Prop
-p1011Res1 =  Not (Equal (Var 'a') (Var 'c'))
+r1 :: Prop
+r1 =  Not (Equal (Var 'a') (Var 'c'))
 
-p1011Res2 :: Prop
-p1011Res2 =  Not (Equal (Var 'b') (Var 'd'))
+r2 :: Prop
+r2 =  Not (Equal (Var 'b') (Var 'd'))
 
-p12 :: Prop
-p12 =  Equal (Var 'a') (Var 'b')
+s1 :: Prop
+s1 =  And (Var 'a') (Var 'd')
 
-p13 :: Prop
-p13 =  Not (Equal (Var 'a') (Var 'b'))
+s2 :: Prop
+s2 =  p11
 
+s1s2 :: Prop
+s1s2 =  Not (Equiv (s1) (s2))
 
+s3 :: Prop
+s3 =  And (Var 'b') (Var 'c')
 -- Tautology Parser and Checker (this needs to be rewritten using Parsec2)
 -------------------------------
-
+{-
 isVar                   :: Char -> Bool
 isVar c                 =  isAlpha c && c /= 'v'
 
 var                     :: Parser Char
-var                     =  sat isVar
+var                     =  satisfy isVar
 
 variable                :: Parser Char
-variable                =  token var
+variable                =  lexeme var
 
 props                   :: Parser Prop
 props                   =  do j <- junc
-                              do symbol "=>"
+                              do string "=>"
                                  p <- props
                                  return (Imply (j) (p))
-                                +++ do symbol "<=>"
+                                <|> do string "<=>"
                                        p <- props
                                        return (Equiv (j) (p))
-                                +++ return j
+                                <|> return j
 
 junc                    :: Parser Prop
 junc                    =  do v <- vari
-                              do symbol "&"
+                              do string "&"
                                  j <- junc
                                  return (And (v) (j))
-                                +++ do symbol "v"
+                                <|> do string "v"
                                        j <- junc
                                        return (Or (v) (j))
-                                +++ return v
+                                <|> return v
 
 vari                    :: Parser Prop
-vari                    =  do symbol "~"
+vari                    =  do string "~"
                               va <- vari
                               return (Not va)
-                             +++ do symbol "("
+                             <|> do string "("
                                     p <- props
-                                    symbol ")"
+                                    string ")"
                                     return p
-                             +++ do v <- variable
+                             <|> do v <- variable
                                     return (Var v)
-
+-}
+{-
 evalprop                :: String -> Prop
 evalprop xs             =  case (parse props xs) of
                              [(n,[])]  -> n
                              [(_,out)] -> error ("unused input " ++ out)
                              []        -> error "invalid input"
-
+-}
 
 
 \end{code}	
