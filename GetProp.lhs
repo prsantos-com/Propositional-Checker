@@ -28,6 +28,7 @@ import Text.Blaze.Html4.Strict            as B hiding (map)
 import Text.Blaze.Html4.Strict.Attributes as B hiding (dir, title) 
 
 import Myitautology as T
+import PropParser as P
 \end{code}
 
 For now I will import my tautology check until I can further understand how
@@ -131,7 +132,7 @@ feedback =
           do p $ "The following error occurred:"
              mapM_ (p . string) errs
       mkBody (Right theprop) = do
-                p (string $ isTautology (T.isTaut (T.evalprop theprop)) theprop)
+                p (string $ isTautology (P.evalProp theprop) theprop)
 
 
 errorPage :: ServerPart Response
@@ -158,9 +159,12 @@ notExist = notFound $ toResponse $
       B.div $ do
         p $ ""
 
-isTautology             :: Bool -> String -> String
-isTautology True prop   =  "The proposition '" ++ prop ++ "' is a tautology."
-isTautology _    prop   =  "The proposition '" ++ prop ++ "' is NOT a tautology."
+isTautology             :: String -> String -> String
+isTautology "True"  prop   =  "The proposition '" ++ prop ++ "' is a tautology."
+isTautology "False" prop   =  "The proposition '" ++ prop ++ "' is NOT a tautology."
+isTautology error   prop   =  prop ++ " is not correctly written proposition\n" ++
+                              "This should help you determine the problem: \n" ++
+                              error
 
 
 \end{code}

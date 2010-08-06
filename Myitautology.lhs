@@ -12,9 +12,10 @@ Propositional checker
 module Myitautology where
 
 import Char
---import Parsing
 import System.IO
 import Text.ParserCombinators.Parsec --this uses Parsec2
+import qualified Text.ParserCombinators.Parsec.Token as T
+import Text.ParserCombinators.Parsec.Language (haskellDef)
 
 import qualified Data.Set as Set
 import Data.Set (Set) 
@@ -35,6 +36,7 @@ data Prop                     =  Const Bool
                                |  Equiv Prop Prop
                                |  Equal Prop Prop
                               deriving(Show, Eq)
+
 \end{code}
 
 Subst will act kind of like a substitution since it doesn't really substitute
@@ -252,56 +254,5 @@ s1s2 =  Not (Equiv (s1) (s2))
 
 s3 :: Prop
 s3 =  And (Var 'b') (Var 'c')
--- Tautology Parser and Checker (this needs to be rewritten using Parsec2)
--------------------------------
-{-
-isVar                   :: Char -> Bool
-isVar c                 =  isAlpha c && c /= 'v'
-
-var                     :: Parser Char
-var                     =  satisfy isVar
-
-variable                :: Parser Char
-variable                =  lexeme var
-
-props                   :: Parser Prop
-props                   =  do j <- junc
-                              do string "=>"
-                                 p <- props
-                                 return (Imply (j) (p))
-                                <|> do string "<=>"
-                                       p <- props
-                                       return (Equiv (j) (p))
-                                <|> return j
-
-junc                    :: Parser Prop
-junc                    =  do v <- vari
-                              do string "&"
-                                 j <- junc
-                                 return (And (v) (j))
-                                <|> do string "v"
-                                       j <- junc
-                                       return (Or (v) (j))
-                                <|> return v
-
-vari                    :: Parser Prop
-vari                    =  do string "~"
-                              va <- vari
-                              return (Not va)
-                             <|> do string "("
-                                    p <- props
-                                    string ")"
-                                    return p
-                             <|> do v <- variable
-                                    return (Var v)
--}
-{-
-evalprop                :: String -> Prop
-evalprop xs             =  case (parse props xs) of
-                             [(n,[])]  -> n
-                             [(_,out)] -> error ("unused input " ++ out)
-                             []        -> error "invalid input"
--}
-
 
 \end{code}	
