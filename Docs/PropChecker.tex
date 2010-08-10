@@ -1,0 +1,1162 @@
+\documentclass{article}
+%% ODER: format ==         = "\mathrel{==}"
+%% ODER: format /=         = "\neq "
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+
+
+\newcommand{\Conid}[1]{\mathit{#1}}
+\newcommand{\Varid}[1]{\mathit{#1}}
+\newcommand{\anonymous}{\kern0.06em \vbox{\hrule\@width.5em}}
+\newcommand{\plus}{\mathbin{+\!\!\!+}}
+\newcommand{\bind}{\mathbin{>\!\!\!>\mkern-6.7mu=}}
+\newcommand{\rbind}{\mathbin{=\mkern-6.7mu<\!\!\!<}}% suggested by Neil Mitchell
+\newcommand{\sequ}{\mathbin{>\!\!\!>}}
+\renewcommand{\leq}{\leqslant}
+\renewcommand{\geq}{\geqslant}
+\usepackage{polytable}
+
+%mathindent has to be defined
+\@ifundefined{mathindent}%
+  {\newdimen\mathindent\mathindent\leftmargini}%
+  {}%
+
+\def\resethooks{%
+  \global\let\SaveRestoreHook\empty
+  \global\let\ColumnHook\empty}
+\newcommand*{\savecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\savecolumns[#1]}}
+\newcommand*{\restorecolumns}[1][default]%
+  {\g@addto@macro\SaveRestoreHook{\restorecolumns[#1]}}
+\newcommand*{\aligncolumn}[2]%
+  {\g@addto@macro\ColumnHook{\column{#1}{#2}}}
+
+\resethooks
+
+\newcommand{\onelinecommentchars}{\quad-{}- }
+\newcommand{\commentbeginchars}{\enskip\{-}
+\newcommand{\commentendchars}{-\}\enskip}
+
+\newcommand{\visiblecomments}{%
+  \let\onelinecomment=\onelinecommentchars
+  \let\commentbegin=\commentbeginchars
+  \let\commentend=\commentendchars}
+
+\newcommand{\invisiblecomments}{%
+  \let\onelinecomment=\empty
+  \let\commentbegin=\empty
+  \let\commentend=\empty}
+
+\visiblecomments
+
+\newlength{\blanklineskip}
+\setlength{\blanklineskip}{0.66084ex}
+
+\newcommand{\hsindent}[1]{\quad}% default is fixed indentation
+\let\hspre\empty
+\let\hspost\empty
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+%% WKlhs.sty
+\def\VarId#1{\mathsf{#1}}
+%\def\VarId#1{\textsf{\slshape{#1}}}
+
+\def\TRIGRAM#1#2#3#4#5{{#1}\kern-#2ex{#3}\kern-#4ex{#5}}
+\def\TRIPLE#1#2{{#1}#2{#1}#2{#1}}
+\def\HAT{\mbox{\^{}}}
+\setlength{\textwidth}{170mm}
+\setlength{\textheight}{240mm}
+\setlength{\hoffset}{-27mm}
+\setlength{\voffset}{-20mm}
+
+\begin{document}
+\title{CS 4Z03 - Functional Programming, in Application to 
+Interactive Web Interfaces for Discrete Mathematics Education}
+\author{Peter Santos}
+\date{\today}
+\maketitle
+This is a modified tautology checker that checks if two propositional
+statements are equal in their evaluation.  It comes from the Tautology checker 
+example in section 10.4 of \emph{Programming in Haskell}, by Graham Hutton. This
+propositional checker no longer evaluates if a proposition a tautology, though
+two extra lines of code could enable this feature.
+\\\\
+To begin, \textbf{Data.Set} is imported to allow for a more intuitive way of
+manipulating the lists that will be used in determining whether a proposition
+is equivalent to another, which will be discussed later.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{module}\;\VarId{PropChecker}\;\mathbf{where}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{import}\;\VarId{qualified}\;\VarId{\VarId{Data}.Set}\;\VarId{as}\;\VarId{Set}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\VarId{\VarId{Data}.Set}\;(\VarId{Set}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+A new data type is now defined which represents common propositional
+logic connectives such as \emph{Or}, \emph{And}, \emph{Implies}, etc.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{32}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{32E}{@{}l@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{35}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\VarId{Var}\mathrel{=}\VarId{Char}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{data}\;\VarId{Prop}{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{Const}\;\VarId{Bool}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{Var}\;\VarId{Var}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{Not}\;\VarId{Prop}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{And}\;\VarId{Prop}\;\VarId{Prop}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{Or}\;\VarId{Prop}\;\VarId{Prop}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{Imply}\;\VarId{Prop}\;\VarId{Prop}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{Equiv}\;\VarId{Prop}\;\VarId{Prop}{}\<[E]%
+\\
+\>[31]{}\hsindent{1}{}\<[32]%
+\>[32]{}\mid {}\<[32E]%
+\>[35]{}\VarId{Equal}\;\VarId{Prop}\;\VarId{Prop}{}\<[E]%
+\\
+\>[31]{}\mathbf{deriving}\;(\VarId{Show},\VarId{Eq}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+Subst will act kind of like a substitution since it doesn't really 
+substitute variables, but rather is type that identifies what Bools should be 
+used for what variables.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{31E}{@{}l@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\VarId{Subst}{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[31E]%
+\>[34]{}\VarId{Assoc}\;\VarId{Char}\;\VarId{Bool}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+Assoc acts lookup table for variables to bools, although this a general 
+definition which only requires two different types, that may or may not be
+Char and Bool.
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{31E}{@{}l@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\VarId{Assoc}\;\VarId{k}\;\VarId{v}{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[31E]%
+\>[34]{}[\mskip1.5mu (\VarId{k},\VarId{v})\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\mathbf{type}\;\VarId{Rel}\;\VarId{k}\;\VarId{v}\mathrel{=}\VarId{Set}\;(\VarId{k},\VarId{v}){}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment type Fct k v = Map.Map k v}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+find will take a variable(k) and table of variables to bools and find the first
+bool value for k and return it.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\VarId{find}{}\<[31]%
+\>[31]{}\mathbin{::}\VarId{Eq}\;\VarId{k}\Rightarrow \VarId{k}\to \VarId{Assoc}\;\VarId{k}\;\VarId{v}\to \VarId{v}{}\<[E]%
+\\
+\>[B]{}\VarId{find}\;\VarId{k}\;\VarId{t}{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{head}\;[\mskip1.5mu \VarId{v}\mid (\VarId{k'},\VarId{v})\leftarrow \VarId{t},\VarId{k}\equiv \VarId{k'}\mskip1.5mu]{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+Now that we have defined a way to associate bool values to variables, we can
+now use this in another function that recursively evaluates a proposition of 
+type Prop. Using the find function it will find the appropriate bool value for
+a variable in a proposition and then evaluate the proposition once it has been
+constructed.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\VarId{eval}{}\<[31]%
+\>[31]{}\mathbin{::}\VarId{Subst}\to \VarId{Prop}\to \VarId{Bool}{}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\anonymous \;(\VarId{Const}\;\VarId{b}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{b}{}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{Var}\;\VarId{x}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{find}\;\VarId{x}\;\VarId{s}{}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{Not}\;\VarId{p}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\neg \;(\VarId{eval}\;\VarId{s}\;\VarId{p}){}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{And}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{eval}\;\VarId{s}\;\VarId{p}\mathrel{\wedge}\VarId{eval}\;\VarId{s}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{Or}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{eval}\;\VarId{s}\;\VarId{p}\mathrel{\vee}\VarId{eval}\;\VarId{s}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{Imply}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{eval}\;\VarId{s}\;\VarId{p}\leq \VarId{eval}\;\VarId{s}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{Equiv}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{eval}\;\VarId{s}\;(\VarId{Imply}\;\VarId{p}\;\VarId{q})\mathrel{\wedge}\VarId{eval}\;\VarId{s}\;(\VarId{Imply}\;\VarId{q}\;\VarId{p}){}\<[E]%
+\\
+\>[B]{}\VarId{eval}\;\VarId{s}\;(\VarId{Equal}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{eval}\;\VarId{s}\;\VarId{p}\equiv \VarId{eval}\;\VarId{s}\;\VarId{q}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+We will use 'vars' to construct a list of variables, that are in a proposition.
+This function will produce duplicate variables, but that's okay for now,
+because we will remove them later.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\VarId{vars}{}\<[31]%
+\>[31]{}\mathbin{::}\VarId{Prop}\to [\mskip1.5mu \VarId{Char}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Const}\;\anonymous ){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Var}\;\VarId{x}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}[\mskip1.5mu \VarId{x}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Not}\;\VarId{p}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{vars}\;\VarId{p}{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{And}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{vars}\;\VarId{p}\plus \VarId{vars}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Or}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{vars}\;\VarId{p}\plus \VarId{vars}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Imply}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{vars}\;\VarId{p}\plus \VarId{vars}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Equiv}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{vars}\;\VarId{p}\plus \VarId{vars}\;\VarId{q}{}\<[E]%
+\\
+\>[B]{}\VarId{vars}\;(\VarId{Equal}\;\VarId{p}\;\VarId{q}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{vars}\;\VarId{p}\plus \VarId{vars}\;\VarId{q}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+The 'bools' function creates a complete truth table of all possible True and
+False combinations for a given number of variables.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{35}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\VarId{bools}{}\<[31]%
+\>[31]{}\mathbin{::}\VarId{Int}\to [\mskip1.5mu [\mskip1.5mu \VarId{Bool}\mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{bools}\;\mathrm{0}{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}[\mskip1.5mu [\mskip1.5mu \mskip1.5mu]\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{bools}\;(\VarId{n}\mathbin{+}\mathrm{1}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{map}\;(\VarId{False}\mathbin{:})\;\VarId{bss}\plus \VarId{map}\;(\VarId{True}\mathbin{:})\;\VarId{bss}{}\<[E]%
+\\
+\>[34]{}\hsindent{1}{}\<[35]%
+\>[35]{}\mathbf{where}\;\VarId{bss}\mathrel{=}\VarId{bools}\;\VarId{n}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+This function filters out all the duplicates of a list, and is used to remove
+the duplicate variables from the list that is generated from 'vars'.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\VarId{rmdups}{}\<[31]%
+\>[31]{}\mathbin{::}\VarId{Eq}\;\VarId{a}\Rightarrow [\mskip1.5mu \VarId{a}\mskip1.5mu]\to [\mskip1.5mu \VarId{a}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{rmdups}\;[\mskip1.5mu \mskip1.5mu]{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{rmdups}\;(\VarId{x}\mathbin{:}\VarId{xs}){}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{x}\mathbin{:}\VarId{rmdups}\;(\VarId{filter}\;(\not\equiv \VarId{x})\;\VarId{xs}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+The function 'substs' will pair the variables produced from 'vars' with the
+list of bools generated from 'bools'.
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{31}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{34}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{35}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\VarId{substs}{}\<[31]%
+\>[31]{}\mathbin{::}\VarId{Prop}\to [\mskip1.5mu \VarId{Subst}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{substs}\;\VarId{p}{}\<[31]%
+\>[31]{}\mathrel{=}{}\<[34]%
+\>[34]{}\VarId{map}\;(\VarId{zip}\;\VarId{vs})\;(\VarId{bools}\;(\VarId{length}\;\VarId{vs})){}\<[E]%
+\\
+\>[34]{}\hsindent{1}{}\<[35]%
+\>[35]{}\mathbf{where}\;\VarId{vs}\mathrel{=}\VarId{rmdups}\;(\VarId{vars}\;\VarId{p}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{14}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{14E}{@{}l@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{18}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{21}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{25}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{26}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{28}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{32}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{33}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{35}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{36}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{39}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{41}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{43}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{45}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{47}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{type}\;\VarId{Rests}{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}[\mskip1.5mu \VarId{Prop}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This function will filter out all the props that don't satisfy the given}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  restrictions}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{cleanSubst}{}\<[33]%
+\>[33]{}\mathbin{::}[\mskip1.5mu \VarId{Subst}\mskip1.5mu]\to \VarId{Prop}\to [\mskip1.5mu \VarId{Subst}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{cleanSubst}\;[\mskip1.5mu \mskip1.5mu]\;{}\<[21]%
+\>[21]{}\VarId{p}{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}[\mskip1.5mu \mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{cleanSubst}\;(\VarId{s}\mathbin{:}\VarId{subs})\;\VarId{p}{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}\mathbf{if}\;\VarId{eval}\;\VarId{s}\;\VarId{p}\;\mathbf{then}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{s}\mathbin{:}\VarId{cleanSubst}\;\VarId{subs}\;\VarId{p}{}\<[E]%
+\\
+\>[36]{}\mathbf{else}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{cleanSubst}\;\VarId{subs}\;\VarId{p}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  \ensuremath{\VarId{eval}\;\VarId{s}\;\VarId{p}\mathrel{=}\VarId{flip}\;\VarId{eval}\;\VarId{p}\;\VarId{s}\mathrel{=}\VarId{s}\mathbin{`\VarId{eval}`}\VarId{p}\mathrel{=}(\mathbin{`\VarId{eval}`}\VarId{p})\;\VarId{s}\mathrel{=}(\lambda \VarId{s}\to \VarId{eval}\;\VarId{s}\;\VarId{p})\;\VarId{s}}}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  \ensuremath{\VarId{flip}\;\VarId{cleanSubst}\;\VarId{p}\mathrel{=}\VarId{filter}\;(\VarId{flip}\;\VarId{eval}\;\VarId{p})}}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This will purge the substition list of any substitutions that do not satisfy}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  the given restrictions. ie, A /= B}{}\<[E]%
+\\
+\>[B]{}\VarId{readySubst}{}\<[33]%
+\>[33]{}\mathbin{::}[\mskip1.5mu \VarId{Subst}\mskip1.5mu]\to \VarId{Rests}\to [\mskip1.5mu \VarId{Subst}\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{readySubst}\;\VarId{subs}\;{}\<[18]%
+\>[18]{}[\mskip1.5mu \mskip1.5mu]{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}\VarId{subs}{}\<[E]%
+\\
+\>[B]{}\VarId{readySubst}\;\VarId{subs}\;{}\<[18]%
+\>[18]{}(\VarId{p}\mathbin{:}\VarId{ps}){}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}\VarId{readySubst}\;(\VarId{cleanSubst}\;\VarId{subs}\;\VarId{p})\;\VarId{ps}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This will create the one part of the final substitution list}{}\<[E]%
+\\
+\>[B]{}\VarId{keepSubst}{}\<[35]%
+\>[35]{}\mathbin{::}[\mskip1.5mu \VarId{Subst}\mskip1.5mu]\to \VarId{\VarId{Set}.Set}\;(\VarId{Char},\VarId{Bool})\to [\mskip1.5mu (\VarId{Subst},\VarId{Subst})\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{keepSubst}\;\VarId{subs}\;\VarId{set1}{}\<[E]%
+\\
+\>[B]{}\hsindent{17}{}\<[17]%
+\>[17]{}\mathrel{=}[\mskip1.5mu (\VarId{s},\VarId{\VarId{Set}.toList}\;\VarId{set1})\mid \VarId{s}\leftarrow \VarId{subs},\VarId{set1}\mathbin{`\VarId{\VarId{Set}.isSubsetOf}`}\VarId{\VarId{Set}.fromList}\;\VarId{s}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This will create the final substitution list. The first arguments should}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  take a larger clean substitution list and a smaller substitution list}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  if the last substitution list is of equal size, then isEquiv should be}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  used instead}{}\<[E]%
+\\
+\>[B]{}\VarId{finalSubst}{}\<[33]%
+\>[33]{}\mathbin{::}[\mskip1.5mu \VarId{Subst}\mskip1.5mu]\to [\mskip1.5mu \VarId{Subst}\mskip1.5mu]\to [\mskip1.5mu (\VarId{Subst},\VarId{Subst})\mskip1.5mu]{}\<[E]%
+\\
+\>[B]{}\VarId{finalSubst}\;\VarId{subs1}\;\VarId{subs2}{}\<[E]%
+\\
+\>[B]{}\hsindent{25}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\VarId{foldl}\;(\plus )\;[\mskip1.5mu \mskip1.5mu]\;[\mskip1.5mu \VarId{keepSubst}\;\VarId{subs1}\;(\VarId{\VarId{Set}.fromList}\;\VarId{s})\mid \VarId{s}\leftarrow \VarId{subs2}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This function works with two propositions that have the same amount of}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  variables. Boring, I know.}{}\<[E]%
+\\
+\>[B]{}\VarId{isEquiv}{}\<[33]%
+\>[33]{}\mathbin{::}\VarId{Prop}\to \VarId{Prop}\to \VarId{Rests}\to \VarId{Bool}{}\<[E]%
+\\
+\>[B]{}\VarId{isEquiv}\;\VarId{p1}\;\VarId{p2}\;\VarId{r}{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}\mathbf{if}\;\VarId{p1}\equiv \VarId{p2}\;\mathbf{then}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{True}{}\<[E]%
+\\
+\>[36]{}\mathbf{else}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{and}\;[\mskip1.5mu \VarId{eval}\;\VarId{s}\;\VarId{p1}\equiv \VarId{eval}\;\VarId{s}\;\VarId{p2}\mid \VarId{s}\leftarrow \VarId{subs}\mskip1.5mu]{}\<[E]%
+\\
+\>[41]{}\hsindent{2}{}\<[43]%
+\>[43]{}\mathbf{where}\;\VarId{subs}\mathrel{=}\VarId{readySubst}\;(\VarId{substs}\;\VarId{p1})\;\VarId{r}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This function works with two propositions that have an unequal amount of}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  variables. The substitution list always has the propositions with more}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  variables p1.}{}\<[E]%
+\\
+\>[B]{}\VarId{isEquiv'}{}\<[33]%
+\>[33]{}\mathbin{::}\VarId{Prop}\to \VarId{Prop}\to [\mskip1.5mu (\VarId{Subst},\VarId{Subst})\mskip1.5mu]\to \VarId{Bool}{}\<[E]%
+\\
+\>[B]{}\VarId{isEquiv'}\;\VarId{p1}\;\VarId{p2}\;\VarId{subs}{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}\VarId{and}\;[\mskip1.5mu \VarId{eval}\;\VarId{s1}\;\VarId{p1}\equiv \VarId{eval}\;\VarId{s2}\;\VarId{p2}\mid (\VarId{s1},\VarId{s2})\leftarrow \VarId{subs}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  Give propMachine two propositions and it's restrictions and it will tell you}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  If they are equivalent}{}\<[E]%
+\\
+\>[B]{}\VarId{propMachine}{}\<[33]%
+\>[33]{}\mathbin{::}\VarId{Prop}\to \VarId{Prop}\to \VarId{Rests}\to \VarId{Bool}{}\<[E]%
+\\
+\>[B]{}\VarId{propMachine}\;\VarId{p1}\;\VarId{p2}\;\VarId{r}{}\<[33]%
+\>[33]{}\mathrel{=}{}\<[36]%
+\>[36]{}\mathbf{if}\;\VarId{varLp1}\mathbin{>}\VarId{varLp2}\;\mathbf{then}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{isEquiv'}\;\VarId{p1}\;\VarId{p2}\;(\VarId{finalSubst}\;(\VarId{cSub1})\;(\VarId{substs}\;\VarId{p2})){}\<[E]%
+\\
+\>[36]{}\mathbf{else}\;\mathbf{if}\;\VarId{varLp2}\mathbin{>}\VarId{varLp1}\;\mathbf{then}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{isEquiv'}\;\VarId{p2}\;\VarId{p1}\;(\VarId{finalSubst}\;(\VarId{cSub2})\;(\VarId{substs}\;\VarId{p1})){}\<[E]%
+\\
+\>[36]{}\mathbf{else}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\VarId{isEquiv}\;\VarId{p1}\;\VarId{p2}\;\VarId{r}{}\<[E]%
+\\
+\>[36]{}\hsindent{5}{}\<[41]%
+\>[41]{}\mathbf{where}\;\VarId{cSub1}\mathrel{=}\VarId{readySubst}\;(\VarId{substs}\;\VarId{p1})\;\VarId{r}{}\<[E]%
+\\
+\>[41]{}\hsindent{6}{}\<[47]%
+\>[47]{}\VarId{cSub2}\mathrel{=}\VarId{readySubst}\;(\VarId{substs}\;\VarId{p2})\;\VarId{r}{}\<[E]%
+\\
+\>[41]{}\hsindent{6}{}\<[47]%
+\>[47]{}\VarId{varLp1}\mathrel{=}\VarId{length}\;(\VarId{rmdups}\;(\VarId{vars}\;\VarId{p1})){}\<[E]%
+\\
+\>[41]{}\hsindent{6}{}\<[47]%
+\>[47]{}\VarId{varLp2}\mathrel{=}\VarId{length}\;(\VarId{rmdups}\;(\VarId{vars}\;\VarId{p2})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This will give the first instance of when two propositions disagree}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment  and format it into a string using disagreeM.}{}\<[E]%
+\\
+\>[B]{}\VarId{disagree}{}\<[25]%
+\>[25]{}\mathbin{::}\VarId{Prop}\to \VarId{Prop}\to \VarId{Rests}\to \VarId{String}{}\<[E]%
+\\
+\>[B]{}\VarId{disagree}\;\VarId{p1}\;\VarId{p2}\;\VarId{r}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\mathbf{if}\;\VarId{varLp1}\mathbin{>}\VarId{varLp2}\;\mathbf{then}{}\<[E]%
+\\
+\>[28]{}\hsindent{5}{}\<[33]%
+\>[33]{}\VarId{disagreeM}\;(\VarId{fstFalsePair}\;\VarId{p1}\;\VarId{p2}\;(\VarId{finalSubst}\;(\VarId{cSub1})\;(\VarId{substs}\;\VarId{p2}))){}\<[E]%
+\\
+\>[28]{}\mathbf{else}\;\mathbf{if}\;\VarId{varLp2}\mathbin{>}\VarId{varLp1}\;\mathbf{then}{}\<[E]%
+\\
+\>[28]{}\hsindent{5}{}\<[33]%
+\>[33]{}\VarId{disagreeM}\;(\VarId{fstFalsePair}\;\VarId{p2}\;\VarId{p1}\;(\VarId{finalSubst}\;(\VarId{cSub2})\;(\VarId{substs}\;\VarId{p1}))){}\<[E]%
+\\
+\>[28]{}\mathbf{else}{}\<[E]%
+\\
+\>[28]{}\hsindent{5}{}\<[33]%
+\>[33]{}\VarId{disagreeM}\;(\VarId{fstFalsePair}\;\VarId{p1}\;\VarId{p2}\;(\VarId{finalSubst}\;\VarId{cSub1}\;\VarId{cSub2})){}\<[E]%
+\\
+\>[28]{}\hsindent{5}{}\<[33]%
+\>[33]{}\mathbf{where}\;\VarId{cSub1}\mathrel{=}\VarId{readySubst}\;(\VarId{substs}\;\VarId{p1})\;\VarId{r}{}\<[E]%
+\\
+\>[33]{}\hsindent{6}{}\<[39]%
+\>[39]{}\VarId{cSub2}\mathrel{=}\VarId{readySubst}\;(\VarId{substs}\;\VarId{p2})\;\VarId{r}{}\<[E]%
+\\
+\>[33]{}\hsindent{6}{}\<[39]%
+\>[39]{}\VarId{varLp1}\mathrel{=}\VarId{length}\;(\VarId{rmdups}\;(\VarId{vars}\;\VarId{p1})){}\<[E]%
+\\
+\>[33]{}\hsindent{6}{}\<[39]%
+\>[39]{}\VarId{varLp2}\mathrel{=}\VarId{length}\;(\VarId{rmdups}\;(\VarId{vars}\;\VarId{p2})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  Takes a substitution and translates to a string.}{}\<[E]%
+\\
+\>[B]{}\VarId{disagreeM}{}\<[25]%
+\>[25]{}\mathbin{::}\VarId{Maybe}\;\VarId{Subst}\to \VarId{String}{}\<[E]%
+\\
+\>[B]{}\VarId{disagreeM}\;(\VarId{Just}\;\VarId{s}){}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\VarId{disagreeM'}\;\VarId{s}{}\<[E]%
+\\
+\>[B]{}\VarId{disagreeM}\;\VarId{Nothing}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\text{\tt \char34 your~proposition~is~evaluated,~it~violates~the~given~\char34}\plus {}\<[E]%
+\\
+\>[28]{}\text{\tt \char34 restrictions.~\char34}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{disagreeM'}{}\<[26]%
+\>[26]{}\mathbin{::}\VarId{Subst}\to \VarId{String}{}\<[E]%
+\\
+\>[B]{}\VarId{disagreeM'}\;((\VarId{v},\VarId{b})\mathbin{:}[\mskip1.5mu \mskip1.5mu]){}\<[26]%
+\>[26]{}\mathrel{=}{}\<[29]%
+\>[29]{}\VarId{v}\mathbin{:}\text{\tt \char34 ~=~\char34}\plus (\VarId{show}\;\VarId{b})\plus \text{\tt \char34 ,~your~proposition~doesn't~\char34}\plus {}\<[E]%
+\\
+\>[29]{}\text{\tt \char34 correctly~describe~the~situation.~\char34}{}\<[E]%
+\\
+\>[B]{}\VarId{disagreeM'}\;((\VarId{v},\VarId{b})\mathbin{:}\VarId{subs})\mathrel{=}{}\<[29]%
+\>[29]{}\VarId{v}\mathbin{:}\text{\tt \char34 ~=~\char34}\plus (\VarId{show}\;\VarId{b})\plus \text{\tt \char34 ,~\char34}\plus \VarId{disagreeM'}\;\VarId{subs}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{fstFalse}{}\<[26]%
+\>[26]{}\mathbin{::}\VarId{Maybe}\;(\VarId{Subst},\VarId{Subst})\to \VarId{Maybe}\;\VarId{Subst}{}\<[E]%
+\\
+\>[B]{}\VarId{fstFalse}\;\VarId{subPair}{}\<[26]%
+\>[26]{}\mathrel{=}{}\<[29]%
+\>[29]{}\mathbf{case}\;\VarId{subPair}\;\mathbf{of}{}\<[E]%
+\\
+\>[29]{}\hsindent{4}{}\<[33]%
+\>[33]{}\VarId{Just}\;(\VarId{s1},\VarId{s2})\to \VarId{Just}\;(\VarId{rmdups}\;(\VarId{s1}\plus \VarId{s2})){}\<[E]%
+\\
+\>[29]{}\hsindent{4}{}\<[33]%
+\>[33]{}\VarId{Nothing}{}\<[47]%
+\>[47]{}\to \VarId{Nothing}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{fstFalsePair}{}\<[25]%
+\>[25]{}\mathbin{::}\VarId{Prop}\to \VarId{Prop}\to [\mskip1.5mu (\VarId{Subst},\VarId{Subst})\mskip1.5mu]\to \VarId{Maybe}\;\VarId{Subst}{}\<[E]%
+\\
+\>[B]{}\VarId{fstFalsePair}\;\VarId{p1}\;\VarId{p2}\;\VarId{s}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\mathbf{case}\;(\VarId{safeHead}\;(\VarId{takeWhile}\;(\lambda (\VarId{s1},\VarId{s2})\to \VarId{eval}\;\VarId{s1}\;\VarId{p1}\not\equiv \VarId{eval}\;\VarId{s2}\;\VarId{p2})\;\VarId{s}))\;\mathbf{of}{}\<[E]%
+\\
+\>[28]{}\hsindent{4}{}\<[32]%
+\>[32]{}\VarId{Just}\;\VarId{subPair}\to \VarId{fstFalse}\;(\VarId{Just}\;\VarId{subPair}){}\<[E]%
+\\
+\>[28]{}\hsindent{4}{}\<[32]%
+\>[32]{}\VarId{Nothing}{}\<[45]%
+\>[45]{}\to \VarId{fstFalse}\;\VarId{Nothing}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{safeHead}\;(\VarId{h}\mathbin{:\char95 })\mathrel{=}\VarId{Just}\;\VarId{h}{}\<[E]%
+\\
+\>[B]{}\VarId{safeHead}\;\anonymous {}\<[14]%
+\>[14]{}\mathrel{=}{}\<[14E]%
+\>[17]{}\VarId{Nothing}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{5}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{7}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{8}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mbox{\onelinecomment  Test propositions}{}\<[E]%
+\\
+\>[B]{}\mbox{\onelinecomment }{}\<[E]%
+\\
+\>[B]{}\VarId{p1}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p1}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{And}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Not}\;(\VarId{Var}\;\text{\tt 'A'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p2}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p2}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Imply}\;(\VarId{And}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'B'}))\;(\VarId{Var}\;\text{\tt 'A'}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p3}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p3}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Imply}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{And}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'B'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p4}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p4}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Imply}\;(\VarId{And}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Imply}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'B'})))\;(\VarId{Var}\;\text{\tt 'B'}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p5}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p5}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Or}\;(\VarId{Not}\;(\VarId{Var}\;\text{\tt 'A'}))\;(\VarId{Var}\;\text{\tt 'A'}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p6}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p6}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Equiv}\;(\VarId{Imply}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'B'}))\;(\VarId{Imply}\;(\VarId{Not}\;(\VarId{Var}\;\text{\tt 'B'}))\;(\VarId{Not}\;(\VarId{Var}\;\text{\tt 'A'}))){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p7}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p7}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Equiv}\;(\VarId{Not}\;(\VarId{And}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'B'})))\;(\VarId{Or}\;(\VarId{Not}\;(\VarId{Var}\;\text{\tt 'A'}))\;(\VarId{Not}\;(\VarId{Var}\;\text{\tt 'B'}))){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p8}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p8}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Imply}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Or}\;(\VarId{Var}\;\text{\tt 'B'})\;(\VarId{Var}\;\text{\tt 'C'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p9}{}\<[5]%
+\>[5]{}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p9}{}\<[5]%
+\>[5]{}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Or}\;(\VarId{Imply}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'B'}))\;(\VarId{Imply}\;(\VarId{Var}\;\text{\tt 'A'})\;(\VarId{Var}\;\text{\tt 'C'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  Ladies or Tigers example}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p10}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p10}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{Equiv}\;(\VarId{Var}\;\text{\tt 'a'})\;(\VarId{Var}\;\text{\tt 'd'}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{p11}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{p11}\mathrel{=}{}\<[8]%
+\>[8]{}\VarId{And}\;(\VarId{Or}\;(\VarId{Var}\;\text{\tt 'a'})\;(\VarId{Var}\;\text{\tt 'b'}))\;(\VarId{Or}\;(\VarId{Var}\;\text{\tt 'c'})\;(\VarId{Var}\;\text{\tt 'd'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{r1}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{r1}\mathrel{=}{}\<[7]%
+\>[7]{}\VarId{Not}\;(\VarId{Equal}\;(\VarId{Var}\;\text{\tt 'a'})\;(\VarId{Var}\;\text{\tt 'c'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{r2}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{r2}\mathrel{=}{}\<[7]%
+\>[7]{}\VarId{Not}\;(\VarId{Equal}\;(\VarId{Var}\;\text{\tt 'b'})\;(\VarId{Var}\;\text{\tt 'd'})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{s1}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{s1}\mathrel{=}{}\<[7]%
+\>[7]{}\VarId{And}\;(\VarId{Var}\;\text{\tt 'a'})\;(\VarId{Var}\;\text{\tt 'd'}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{s2}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{s2}\mathrel{=}{}\<[7]%
+\>[7]{}\VarId{p11}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{s1s2}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{s1s2}\mathrel{=}{}\<[9]%
+\>[9]{}\VarId{Not}\;(\VarId{Equiv}\;(\VarId{s1})\;(\VarId{s2})){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{s3}\mathbin{::}\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{s3}\mathrel{=}{}\<[7]%
+\>[7]{}\VarId{And}\;(\VarId{Var}\;\text{\tt 'b'})\;(\VarId{Var}\;\text{\tt 'c'}){}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+%% \documentclass{article}
+%% %include polycode.fmt
+%% \begin{document}
+\section{PropParser}
+
+This is my propostional parser using Parsec (parsec2 package)
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mathbf{module}\;\VarId{PropParser}\;\mathbf{where}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{import}\;\VarId{\VarId{Text}.\VarId{ParserCombinators}.Parsec}\mbox{\onelinecomment  :set -ignore-package parsec-3.1.0}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\VarId{\VarId{Text}.\VarId{ParserCombinators}.\VarId{Parsec}.Expr}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\VarId{qualified}\;\VarId{\VarId{Text}.\VarId{ParserCombinators}.\VarId{Parsec}.Token}\;\VarId{as}\;\VarId{T}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\VarId{\VarId{Text}.\VarId{ParserCombinators}.\VarId{Parsec}.Language}\;(\VarId{haskellDef}){}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\VarId{\VarId{Text}.\VarId{ParserCombinators}.\VarId{Parsec}.Char}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mathbf{import}\;\VarId{PropChecker}{}\<[E]%
+\\
+\>[B]{}\mathbf{import}\;\VarId{Char}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+
+\begin{hscode}\SaveRestoreHook
+\column{B}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{9}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{10}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{11}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{13}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{17}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{20}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{24}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{25}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{26}{@{}>{\hspre}c<{\hspost}@{}}%
+\column{26E}{@{}l@{}}%
+\column{28}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{29}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{32}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{33}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{40}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{41}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{48}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{49}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{56}{@{}>{\hspre}l<{\hspost}@{}}%
+\column{E}{@{}>{\hspre}l<{\hspost}@{}}%
+\>[B]{}\mbox{\onelinecomment  The Parser}{}\<[E]%
+\\
+\>[B]{}\VarId{mainParser}\mathrel{=}\mathbf{do}\;\VarId{whiteSpace}{}\<[E]%
+\\
+\>[B]{}\hsindent{17}{}\<[17]%
+\>[17]{}\VarId{e}\leftarrow \VarId{expr}{}\<[E]%
+\\
+\>[B]{}\hsindent{17}{}\<[17]%
+\>[17]{}\VarId{eof}{}\<[E]%
+\\
+\>[B]{}\hsindent{17}{}\<[17]%
+\>[17]{}\VarId{return}\;\VarId{e}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{expr}{}\<[9]%
+\>[9]{}\mathrel{=}\VarId{buildExpressionParser}\;\VarId{table}\;\VarId{term}{}\<[E]%
+\\
+\>[9]{}\mathbin{<?>}\text{\tt \char34 expression\char34}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{term0}{}\<[10]%
+\>[10]{}\mathrel{=}{}\<[13]%
+\>[13]{}\VarId{parens}\;\VarId{expr}{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\mathbin{<|>}\VarId{var}{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\mathbin{<?>}\text{\tt \char34 simple~proposition\char34}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{term}{}\<[10]%
+\>[10]{}\mathrel{=}\mathbf{do}{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\VarId{t}\leftarrow \VarId{term0}{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\VarId{whiteSpace}{}\<[E]%
+\\
+\>[B]{}\hsindent{9}{}\<[9]%
+\>[9]{}\VarId{return}\;\VarId{t}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{table}{}\<[9]%
+\>[9]{}\mathbin{::}\VarId{OperatorTable}\;\VarId{Char}\;()\;\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{table}{}\<[9]%
+\>[9]{}\mathrel{=}[\mskip1.5mu [\mskip1.5mu \VarId{prefix}\;\text{\tt \char34 \char126 \char34}\;\VarId{Not}\mskip1.5mu]{}\<[E]%
+\\
+\>[9]{}\hsindent{2}{}\<[11]%
+\>[11]{},[\mskip1.5mu \VarId{binary}\;\text{\tt \char34 \&\char34}\;\VarId{And}\;\VarId{AssocLeft},\VarId{binary}\;\text{\tt \char34 v\char34}\;\VarId{Or}\;\VarId{AssocLeft}\mskip1.5mu]{}\<[E]%
+\\
+\>[9]{}\hsindent{2}{}\<[11]%
+\>[11]{},[\mskip1.5mu \VarId{binary}\;\text{\tt \char34 =>\char34}\;\VarId{Imply}\;\VarId{AssocLeft},\VarId{binary}\;\text{\tt \char34 <=>\char34}\;\VarId{Equiv}\;\VarId{AssocNone}\mskip1.5mu]{}\<[E]%
+\\
+\>[9]{}\hsindent{2}{}\<[11]%
+\>[11]{}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{binary}\;{}\<[9]%
+\>[9]{}\VarId{name}\;\VarId{fun}\;\VarId{assoc}\mathrel{=}\VarId{Infix}\;(\mathbf{do}\;\{\mskip1.5mu \VarId{reservedOp}\;\VarId{name};\VarId{whiteSpace};\VarId{return}\;\VarId{fun}\mskip1.5mu\})\;\VarId{assoc}{}\<[E]%
+\\
+\>[B]{}\VarId{prefix}\;{}\<[9]%
+\>[9]{}\VarId{name}\;\VarId{fun}{}\<[24]%
+\>[24]{}\mathrel{=}\VarId{Prefix}\;(\mathbf{do}\;\{\mskip1.5mu \VarId{reservedOp}\;\VarId{name};\VarId{whiteSpace};\VarId{return}\;\VarId{fun}\mskip1.5mu\}){}\<[E]%
+\\
+\>[B]{}\VarId{postfix}\;\VarId{name}\;\VarId{fun}{}\<[24]%
+\>[24]{}\mathrel{=}\VarId{Postfix}\;(\mathbf{do}\;\{\mskip1.5mu \VarId{reservedOp}\;\VarId{name};\VarId{whiteSpace};\VarId{return}\;\VarId{fun}\mskip1.5mu\}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{isVar}{}\<[25]%
+\>[25]{}\mathbin{::}\VarId{Char}\to \VarId{Bool}{}\<[E]%
+\\
+\>[B]{}\VarId{isVar}\;\VarId{c}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\VarId{isAlpha}\;\VarId{c}\mathrel{\wedge}\VarId{c}\not\equiv \text{\tt 'v'}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{var}{}\<[25]%
+\>[25]{}\mathbin{::}\VarId{Parser}\;\VarId{Prop}{}\<[E]%
+\\
+\>[B]{}\VarId{var}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\VarId{fmap}\;\VarId{Var}\mathbin{\$}\VarId{satisfy}\;\VarId{isVar}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{evalProp}{}\<[24]%
+\>[24]{}\mathbin{::}\VarId{String}\to \VarId{String}\to \VarId{Rests}\to \VarId{String}{}\<[E]%
+\\
+\>[B]{}\VarId{evalProp}\;\VarId{x1}\;\VarId{x2}\;\VarId{rs}{}\<[E]%
+\\
+\>[B]{}\hsindent{17}{}\<[17]%
+\>[17]{}\mathrel{=}{}\<[20]%
+\>[20]{}\mathbf{case}\;(\VarId{parse}\;\VarId{mainParser}\;\text{\tt \char34 \char34}\;\VarId{x1})\;\mathbf{of}{}\<[E]%
+\\
+\>[20]{}\hsindent{5}{}\<[25]%
+\>[25]{}\VarId{Left}\;\VarId{err1}\to \VarId{show}\;\VarId{err1}{}\<[E]%
+\\
+\>[20]{}\hsindent{5}{}\<[25]%
+\>[25]{}\VarId{Right}\;{}\<[32]%
+\>[32]{}\VarId{p1}\to \mathbf{case}\;(\VarId{parse}\;\VarId{mainParser}\;\text{\tt \char34 \char34}\;\VarId{x2})\;\mathbf{of}{}\<[E]%
+\\
+\>[32]{}\hsindent{9}{}\<[41]%
+\>[41]{}\VarId{Left}\;\VarId{err2}\to \VarId{show}\;\VarId{err2}{}\<[E]%
+\\
+\>[32]{}\hsindent{9}{}\<[41]%
+\>[41]{}\VarId{Right}\;{}\<[48]%
+\>[48]{}\VarId{p2}\to \VarId{show}\;(\VarId{propMachine}\;\VarId{p1}\;\VarId{p2}\;\VarId{rs}){}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  This will convert the first string to a Prop and allow disagree to work}{}\<[E]%
+\\
+\>[B]{}\VarId{evalDisagree}{}\<[25]%
+\>[25]{}\mathbin{::}\VarId{String}\to \VarId{String}\to \VarId{Rests}\to \VarId{String}{}\<[E]%
+\\
+\>[B]{}\VarId{evalDisagree}\;\VarId{x1}\;\VarId{x2}\;\VarId{rs}{}\<[26]%
+\>[26]{}\mathrel{=}{}\<[26E]%
+\>[29]{}\mathbf{case}\;(\VarId{parse}\;\VarId{mainParser}\;\text{\tt \char34 \char34}\;\VarId{x1})\;\mathbf{of}{}\<[E]%
+\\
+\>[29]{}\hsindent{4}{}\<[33]%
+\>[33]{}\VarId{Left}\;\VarId{err1}\to \VarId{show}\;\VarId{err1}{}\<[E]%
+\\
+\>[29]{}\hsindent{4}{}\<[33]%
+\>[33]{}\VarId{Right}\;\VarId{p1}\to \mathbf{case}\;(\VarId{parse}\;\VarId{mainParser}\;\text{\tt \char34 \char34}\;\VarId{x2})\;\mathbf{of}{}\<[E]%
+\\
+\>[33]{}\hsindent{16}{}\<[49]%
+\>[49]{}\VarId{Left}\;\VarId{err2}\to \VarId{show}\;\VarId{err2}{}\<[E]%
+\\
+\>[33]{}\hsindent{16}{}\<[49]%
+\>[49]{}\VarId{Right}\;{}\<[56]%
+\>[56]{}\VarId{p2}\to \VarId{disagree}\;\VarId{p1}\;\VarId{p2}\;\VarId{rs}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  Restriction parser}{}\<[E]%
+\\
+\>[B]{}\VarId{getRests}{}\<[25]%
+\>[25]{}\mathbin{::}[\mskip1.5mu \VarId{String}\mskip1.5mu]\to \VarId{Rests}\to \VarId{Either}\;\VarId{String}\;\VarId{Rests}{}\<[E]%
+\\
+\>[B]{}\VarId{getRests}\;[\mskip1.5mu \mskip1.5mu]\;{}\<[17]%
+\>[17]{}\VarId{ps}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\VarId{Right}\;\VarId{ps}{}\<[E]%
+\\
+\>[B]{}\VarId{getRests}\;(\VarId{r}\mathbin{:}\VarId{rs})\;\VarId{ps}{}\<[25]%
+\>[25]{}\mathrel{=}{}\<[28]%
+\>[28]{}\mathbf{case}\;(\VarId{parse}\;\VarId{mainParser}\;\text{\tt \char34 \char34}\;\VarId{r})\;\mathbf{of}{}\<[E]%
+\\
+\>[28]{}\hsindent{5}{}\<[33]%
+\>[33]{}\VarId{Left}\;\VarId{err}\to \VarId{Left}\;\text{\tt \char34 hello\char34}{}\<[E]%
+\\
+\>[28]{}\hsindent{5}{}\<[33]%
+\>[33]{}\VarId{Right}\;{}\<[40]%
+\>[40]{}\VarId{p}\to \VarId{Right}\;[\mskip1.5mu \VarId{p}\mskip1.5mu]{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{removeEmpty}\;\VarId{xs}\mathrel{=}\VarId{filter}\;(\not\equiv \text{\tt \char34 \char34})\;\VarId{xs}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\mbox{\onelinecomment  The lexer}{}\<[E]%
+\\
+\>[B]{}\VarId{lexer}{}\<[13]%
+\>[13]{}\mathrel{=}\VarId{\VarId{T}.makeTokenParser}\;\VarId{haskellDef}{}\<[E]%
+\\
+\>[B]{}\VarId{lexeme}{}\<[13]%
+\>[13]{}\mathrel{=}\VarId{\VarId{T}.lexeme}{}\<[E]%
+\\[\blanklineskip]%
+\>[B]{}\VarId{parens}{}\<[13]%
+\>[13]{}\mathrel{=}\VarId{\VarId{T}.parens}\;\VarId{lexer}{}\<[E]%
+\\
+\>[B]{}\VarId{natural}{}\<[13]%
+\>[13]{}\mathrel{=}\VarId{\VarId{T}.natural}\;\VarId{lexer}{}\<[E]%
+\\
+\>[B]{}\VarId{reservedOp}{}\<[13]%
+\>[13]{}\mathrel{=}\VarId{\VarId{T}.reservedOp}\;\VarId{lexer}{}\<[E]%
+\\
+\>[B]{}\VarId{whiteSpace}{}\<[13]%
+\>[13]{}\mathrel{=}\VarId{\VarId{T}.whiteSpace}\;\VarId{lexer}{}\<[E]%
+\ColumnHook
+\end{hscode}\resethooks
+%\end{document}
+\end{document}	

@@ -1,3 +1,8 @@
+%% \documentclass{article}
+%% %include polycode.fmt
+%% \begin{document}
+\section{PropParser}
+
 This is my propostional parser using Parsec (parsec2 package)
 
 \begin{code}
@@ -9,61 +14,11 @@ import qualified Text.ParserCombinators.Parsec.Token as T
 import Text.ParserCombinators.Parsec.Language (haskellDef)
 import Text.ParserCombinators.Parsec.Char
 
-import Myitautology
+import PropChecker
 import Char
 \end{code}
 
 \begin{code}
-
-
-{-
----------- old Expression
-isVar                   :: Char -> Bool
-isVar c                 =  isAlpha c && c /= 'v'
-
-var                     :: Parser Char
-var                     =  satisfy isVar
-
-variable                :: Parser Char
-variable                =  T.lexeme var
-
-props                   :: Parser Prop
-props                   =  do j <- junc
-                              do string "=>"
-                                 p <- props
-                                 return (Imply (j) (p))
-                                <|> do string "<=>"
-                                       p <- props
-                                       return (Equiv (j) (p))
-                                <|> return j
-
-junc                    :: Parser Prop
-junc                    =  do v <- vari
-                              do string "&"
-                                 j <- junc
-                                 return (And (v) (j))
-                                <|> do string "v"
-                                       j <- junc
-                                       return (Or (v) (j))
-                                <|> return v
-
-vari                    :: Parser Prop
-vari                    =  do string "~"
-                              va <- vari
-                              return (Not va)
-                             <|> do string "("
-                                    p <- props
-                                    string ")"
-                                    return p
-                             <|> do v <- variable
-                                    return (Var v)
-----------
--}
-
-
-
-
-
 -- The Parser
 mainParser = do whiteSpace
                 e <- expr
@@ -98,10 +53,30 @@ isVar c                 =  isAlpha c && c /= 'v'
 var                     :: Parser Prop
 var                     =  fmap Var $ satisfy isVar
 
-evalProp               :: String -> String
-evalProp xs            =  case (parse mainParser "" xs) of
-                                Left err -> show err
-                                Right  p -> show (isTaut p)
+evalProp               :: String -> String -> Rests -> String
+evalProp x1 x2 rs           
+                =  case (parse mainParser "" x1) of
+                        Left err1 -> show err1
+                        Right  p1 -> case (parse mainParser "" x2) of
+                                        Left err2 -> show err2
+                                        Right  p2 -> show (propMachine p1 p2 rs)
+
+-- This will convert the first string to a Prop and allow disagree to work
+evalDisagree            :: String -> String -> Rests -> String
+evalDisagree x1 x2 rs    =  case (parse mainParser "" x1) of
+                                Left err1 -> show err1
+                                Right p1 -> case (parse mainParser "" x2) of
+                                                Left err2 -> show err2
+                                                Right  p2 -> disagree p1 p2 rs
+
+-- Restriction parser
+getRests                :: [String] -> Rests -> Either String Rests
+getRests []     ps      =  Right ps
+getRests (r:rs) ps      =  case (parse mainParser "" r) of
+                                Left err -> Left "hello"
+                                Right  p -> Right [p]
+
+removeEmpty xs = filter (/= "") xs
 
 -- The lexer
 lexer       = T.makeTokenParser haskellDef
@@ -111,7 +86,5 @@ parens      = T.parens lexer
 natural     = T.natural lexer
 reservedOp  = T.reservedOp lexer
 whiteSpace  = T.whiteSpace lexer
-
-
-
 \end{code}
+%\end{document}

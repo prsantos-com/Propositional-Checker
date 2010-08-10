@@ -1,0 +1,293 @@
+\documentclass{article}
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+\begin{document}
+
+This is my propostional parser using Parsec (parsec2 package)
+
+\begin{tabbing}\tt
+~module~PropParser~where\\
+\tt ~\\
+\tt ~import~Text\char46{}ParserCombinators\char46{}Parsec~\char45{}\char45{}~\char58{}set~\char45{}ignore\char45{}package~parsec\char45{}3\char46{}1\char46{}0\\
+\tt ~import~Text\char46{}ParserCombinators\char46{}Parsec\char46{}Expr\\
+\tt ~import~qualified~Text\char46{}ParserCombinators\char46{}Parsec\char46{}Token~as~T\\
+\tt ~import~Text\char46{}ParserCombinators\char46{}Parsec\char46{}Language~\char40{}haskellDef\char41{}\\
+\tt ~import~Text\char46{}ParserCombinators\char46{}Parsec\char46{}Char\\
+\tt ~\\
+\tt ~import~Myitautology\\
+\tt ~import~Char
+\end{tabbing}
+
+\begin{tabbing}\tt
+~\char45{}\char45{}~The~Parser\\
+\tt ~mainParser~\char61{}~do~whiteSpace\\
+\tt ~~~~~~~~~~~~~~~~~e~\char60{}\char45{}~expr\\
+\tt ~~~~~~~~~~~~~~~~~eof\\
+\tt ~~~~~~~~~~~~~~~~~return~e\\
+\tt ~\\
+\tt ~expr~~~~\char61{}~buildExpressionParser~table~term\\
+\tt ~~~~~~~~~\char60{}\char63{}\char62{}~\char34{}expression\char34{}\\
+\tt ~\\
+\tt ~term0~~~~\char61{}~~parens~expr\\
+\tt ~~~~~~~~~\char60{}\char124{}\char62{}~var\\
+\tt ~~~~~~~~~\char60{}\char63{}\char62{}~\char34{}simple~proposition\char34{}\\
+\tt ~\\
+\tt ~term~~~~~\char61{}~do\\
+\tt ~~~~~~~~~t~\char60{}\char45{}~term0\\
+\tt ~~~~~~~~~whiteSpace\\
+\tt ~~~~~~~~~return~t\\
+\tt ~\\
+\tt ~table~~~\char58{}\char58{}~OperatorTable~Char~\char40{}\char41{}~Prop\\
+\tt ~table~~~\char61{}~\char91{}~\char91{}prefix~\char34{}\char126{}\char34{}~Not~\char93{}\\
+\tt ~~~~~~~~~~~\char44{}~\char91{}binary~\char34{}\char38{}\char34{}~And~AssocLeft\char44{}~binary~\char34{}v\char34{}~Or~AssocLeft~\char93{}\\
+\tt ~~~~~~~~~~~\char44{}~\char91{}binary~\char34{}\char61{}\char62{}\char34{}~Imply~AssocLeft\char44{}~binary~\char34{}\char60{}\char61{}\char62{}\char34{}~Equiv~AssocNone~\char93{}\\
+\tt ~~~~~~~~~~~\char93{}\\
+\tt ~\\
+\tt ~binary~~name~fun~assoc~\char61{}~Infix~\char40{}do\char123{}~reservedOp~name\char59{}~whiteSpace\char59{}~return~fun~\char125{}\char41{}~assoc\\
+\tt ~prefix~~name~fun~~~~~~~\char61{}~Prefix~\char40{}do\char123{}~reservedOp~name\char59{}~whiteSpace\char59{}~return~fun~\char125{}\char41{}\\
+\tt ~postfix~name~fun~~~~~~~\char61{}~Postfix~\char40{}do\char123{}~reservedOp~name\char59{}~whiteSpace\char59{}~return~fun~\char125{}\char41{}\\
+\tt ~\\
+\tt ~isVar~~~~~~~~~~~~~~~~~~~\char58{}\char58{}~Char~\char45{}\char62{}~Bool\\
+\tt ~isVar~c~~~~~~~~~~~~~~~~~\char61{}~~isAlpha~c~\char38{}\char38{}~c~\char47{}\char61{}~\char39{}v\char39{}\\
+\tt ~\\
+\tt ~var~~~~~~~~~~~~~~~~~~~~~\char58{}\char58{}~Parser~Prop\\
+\tt ~var~~~~~~~~~~~~~~~~~~~~~\char61{}~~fmap~Var~\char36{}~satisfy~isVar\\
+\tt ~\\
+\tt ~evalProp~~~~~~~~~~~~~~~\char58{}\char58{}~String~\char45{}\char62{}~String~\char45{}\char62{}~Rests~\char45{}\char62{}~String\\
+\tt ~evalProp~x1~x2~rs~~~~~~~~~~~\\
+\tt ~~~~~~~~~~~~~~~~~\char61{}~~case~\char40{}parse~mainParser~\char34{}\char34{}~x1\char41{}~of\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~Left~err1~\char45{}\char62{}~show~err1\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~Right~~p1~\char45{}\char62{}~case~\char40{}parse~mainParser~\char34{}\char34{}~x2\char41{}~of\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Left~err2~\char45{}\char62{}~show~err2\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Right~~p2~\char45{}\char62{}~show~\char40{}propMachine~p1~p2~rs\char41{}\\
+\tt ~\\
+\tt ~\char45{}\char45{}~This~will~convert~the~first~string~to~a~Prop~and~allow~disagree~to~work\\
+\tt ~evalDisagree~~~~~~~~~~~~\char58{}\char58{}~String~\char45{}\char62{}~String~\char45{}\char62{}~Rests~\char45{}\char62{}~String\\
+\tt ~evalDisagree~x1~x2~rs~~~~\char61{}~~case~\char40{}parse~mainParser~\char34{}\char34{}~x1\char41{}~of\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Left~err1~\char45{}\char62{}~show~err1\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Right~p1~\char45{}\char62{}~case~\char40{}parse~mainParser~\char34{}\char34{}~x2\char41{}~of\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Left~err2~\char45{}\char62{}~show~err2\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Right~~p2~\char45{}\char62{}~disagree~p1~p2~rs\\
+\tt ~\\
+\tt ~\char45{}\char45{}~Restriction~parser\\
+\tt ~getRests~~~~~~~~~~~~~~~~\char58{}\char58{}~\char91{}String\char93{}~\char45{}\char62{}~Rests~\char45{}\char62{}~Either~String~Rests\\
+\tt ~getRests~\char91{}\char93{}~~~~~ps~~~~~~\char61{}~~Right~ps\\
+\tt ~getRests~\char40{}r\char58{}rs\char41{}~ps~~~~~~\char61{}~~case~\char40{}parse~mainParser~\char34{}\char34{}~r\char41{}~of\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Left~err~\char45{}\char62{}~Left~\char34{}hello\char34{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Right~~p~\char45{}\char62{}~Right~\char91{}p\char93{}\\
+\tt ~\\
+\tt ~removeEmpty~xs~\char61{}~filter~\char40{}\char47{}\char61{}~\char34{}\char34{}\char41{}~xs\\
+\tt ~\\
+\tt ~\char45{}\char45{}~The~lexer\\
+\tt ~lexer~~~~~~~\char61{}~T\char46{}makeTokenParser~haskellDef\\
+\tt ~lexeme~~~~~~\char61{}~T\char46{}lexeme\\
+\tt ~\\
+\tt ~parens~~~~~~\char61{}~T\char46{}parens~lexer\\
+\tt ~natural~~~~~\char61{}~T\char46{}natural~lexer\\
+\tt ~reservedOp~~\char61{}~T\char46{}reservedOp~lexer\\
+\tt ~whiteSpace~~\char61{}~T\char46{}whiteSpace~lexer
+\end{tabbing}
+\end{document}

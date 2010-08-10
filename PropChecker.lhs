@@ -1,32 +1,34 @@
 \documentclass{article}
 %include polycode.fmt
+%include WKlhs.sty
+\setlength{\textwidth}{170mm}
+\setlength{\textheight}{240mm}
+\setlength{\hoffset}{-27mm}
+\setlength{\voffset}{-20mm}
+
 \begin{document}
+\title{CS 4Z03 - Functional Programming, in Application to 
+Interactive Web Interfaces for Discrete Mathematics Education}
+\author{Peter Santos}
+\date{\today}
+\maketitle
 This is a modified tautology checker that checks if two propositional
-statements are equal in their evaluation.
-
-It comes from the Tautology checker example from section 10.4 of 
-Programming in Haskell, Graham Hutton, Cambridge University Press, 2007.
-
-
-Propositional checker
------------------
-
+statements are equal in their evaluation.  It comes from the Tautology checker 
+example in section 10.4 of \emph{Programming in Haskell}, by Graham Hutton. This
+propositional checker no longer evaluates if a proposition a tautology, though
+two extra lines of code could enable this feature.
+\\\\
+To begin, \textbf{Data.Set} is imported to allow for a more intuitive way of
+manipulating the lists that will be used in determining whether a proposition
+is equivalent to another, which will be discussed later.
 \begin{code}
 module PropChecker where
-
-import Char
-import System.IO
-import Text.ParserCombinators.Parsec --this uses Parsec2
-import qualified Text.ParserCombinators.Parsec.Token as T
-import Text.ParserCombinators.Parsec.Language (haskellDef)
 
 import qualified Data.Set as Set
 import Data.Set (Set) 
 \end{code}
-
-First our data type is defined which represents common propositional logic
-connectives such as Or, And, Implies, etc.
-
+A new data type is now defined which represents common propositional
+logic connectives such as \emph{Or}, \emph{And}, \emph{Implies}, etc.
 \begin{code} 
 type Var = Char
 
@@ -41,21 +43,16 @@ data Prop                     =  Const Bool
                               deriving(Show, Eq)
 
 \end{code}
-
-Subst will act kind of like a substitution since it doesn't really substitute
-variables, but rather is type that identifies what Bools should be used for
-what variables.
-
+Subst will act kind of like a substitution since it doesn't really 
+substitute variables, but rather is type that identifies what Bools should be 
+used for what variables.
 \begin{code}
 type Subst                    =  Assoc Char Bool
 \end{code}
-
 Assoc acts lookup table for variables to bools, although this a general 
 definition which only requires two different types, that may or may not be
 Char and Bool.
-
 \begin{code}
-
 type Assoc k v                =  [(k,v)]
 type Rel k v = Set (k,v)
 --type Fct k v = Map.Map k v
@@ -134,13 +131,12 @@ substs p                      =  map (zip vs) (bools (length vs))
 
 
 \begin{code}
-isTaut                        :: Prop -> Bool
-isTaut p                      =  and [eval s p | s <- substs p]
+
+
+type Rests                      =  [Prop]
 
 -- This function will filter out all the props that don't satisfy the given
 -- restrictions
-
-type Rests                      =  [Prop]
 
 cleanSubst                      :: [Subst] -> Prop -> [Subst]
 cleanSubst []       p           =  []
@@ -300,4 +296,6 @@ s3 :: Prop
 s3 =  And (Var 'b') (Var 'c')
 
 \end{code}
+
+%include ../PropParser.lhs
 \end{document}	

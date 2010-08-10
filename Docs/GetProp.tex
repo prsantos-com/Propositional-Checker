@@ -1,0 +1,408 @@
+\documentclass{article}
+%
+%
+\makeatletter
+\@ifundefined{lhs2tex.lhs2tex.sty.read}%
+  {\@namedef{lhs2tex.lhs2tex.sty.read}{}%
+   \newcommand\SkipToFmtEnd{}%
+   \newcommand\EndFmtInput{}%
+   \long\def\SkipToFmtEnd#1\EndFmtInput{}%
+  }\SkipToFmtEnd
+
+\newcommand\ReadOnlyOnce[1]{\@ifundefined{#1}{\@namedef{#1}{}}\SkipToFmtEnd}
+\usepackage{amstext}
+\usepackage{amssymb}
+\usepackage{stmaryrd}
+\DeclareFontFamily{OT1}{cmtex}{}
+\DeclareFontShape{OT1}{cmtex}{m}{n}
+  {<5><6><7><8>cmtex8
+   <9>cmtex9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmtex10}{}
+\DeclareFontShape{OT1}{cmtex}{m}{it}
+  {<-> ssub * cmtt/m/it}{}
+\newcommand{\texfamily}{\fontfamily{cmtex}\selectfont}
+\DeclareFontShape{OT1}{cmtt}{bx}{n}
+  {<5><6><7><8>cmtt8
+   <9>cmbtt9
+   <10><10.95><12><14.4><17.28><20.74><24.88>cmbtt10}{}
+\DeclareFontShape{OT1}{cmtex}{bx}{n}
+  {<-> ssub * cmtt/bx/n}{}
+\newcommand{\tex}[1]{\text{\texfamily#1}}	% NEU
+
+\newcommand{\Sp}{\hskip.33334em\relax}
+\newcommand{\NB}{\textbf{NB}}
+\newcommand{\Todo}[1]{$\langle$\textbf{To do:}~#1$\rangle$}
+
+\EndFmtInput
+\makeatother
+%
+%
+%
+%
+%
+%
+% This package provides two environments suitable to take the place
+% of hscode, called "plainhscode" and "arrayhscode". 
+%
+% The plain environment surrounds each code block by vertical space,
+% and it uses \abovedisplayskip and \belowdisplayskip to get spacing
+% similar to formulas. Note that if these dimensions are changed,
+% the spacing around displayed math formulas changes as well.
+% All code is indented using \leftskip.
+%
+% Changed 19.08.2004 to reflect changes in colorcode. Should work with
+% CodeGroup.sty.
+%
+\ReadOnlyOnce{polycode.fmt}%
+\makeatletter
+
+\newcommand{\hsnewpar}[1]%
+  {{\parskip=0pt\parindent=0pt\par\vskip #1\noindent}}
+
+% can be used, for instance, to redefine the code size, by setting the
+% command to \small or something alike
+\newcommand{\hscodestyle}{}
+
+% The command \sethscode can be used to switch the code formatting
+% behaviour by mapping the hscode environment in the subst directive
+% to a new LaTeX environment.
+
+\newcommand{\sethscode}[1]%
+  {\expandafter\let\expandafter\hscode\csname #1\endcsname
+   \expandafter\let\expandafter\endhscode\csname end#1\endcsname}
+
+% "compatibility" mode restores the non-polycode.fmt layout.
+
+\newenvironment{compathscode}%
+  {\par\noindent
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed\)%
+   \par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\compaths}{\sethscode{compathscode}}
+
+% "plain" mode is the proposed default.
+% It should now work with \centering.
+% This required some changes. The old version
+% is still available for reference as oldplainhscode.
+
+\newenvironment{plainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\hspre\(\let\hspost\)%
+   \pboxed}%
+  {\endpboxed%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newenvironment{oldplainhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+% Here, we make plainhscode the default environment.
+
+\newcommand{\plainhs}{\sethscode{plainhscode}}
+\newcommand{\oldplainhs}{\sethscode{oldplainhscode}}
+\plainhs
+
+% The arrayhscode is like plain, but makes use of polytable's
+% parray environment which disallows page breaks in code blocks.
+
+\newenvironment{arrayhscode}%
+  {\hsnewpar\abovedisplayskip
+   \advance\leftskip\mathindent
+   \hscodestyle
+   \let\\=\@normalcr
+   \(\parray}%
+  {\endparray\)%
+   \hsnewpar\belowdisplayskip
+   \ignorespacesafterend}
+
+\newcommand{\arrayhs}{\sethscode{arrayhscode}}
+
+% The mathhscode environment also makes use of polytable's parray 
+% environment. It is supposed to be used only inside math mode 
+% (I used it to typeset the type rules in my thesis).
+
+\newenvironment{mathhscode}%
+  {\parray}{\endparray}
+
+\newcommand{\mathhs}{\sethscode{mathhscode}}
+
+% texths is similar to mathhs, but works in text mode.
+
+\newenvironment{texthscode}%
+  {\(\parray}{\endparray\)}
+
+\newcommand{\texths}{\sethscode{texthscode}}
+
+% The framed environment places code in a framed box.
+
+\def\codeframewidth{\arrayrulewidth}
+\RequirePackage{calc}
+
+\newenvironment{framedhscode}%
+  {\parskip=\abovedisplayskip\par\noindent
+   \hscodestyle
+   \arrayrulewidth=\codeframewidth
+   \tabular{@{}|p{\linewidth-2\arraycolsep-2\arrayrulewidth-2pt}|@{}}%
+   \hline\framedhslinecorrect\\{-1.5ex}%
+   \let\endoflinesave=\\
+   \let\\=\@normalcr
+   \(\pboxed}%
+  {\endpboxed\)%
+   \framedhslinecorrect\endoflinesave{.5ex}\hline
+   \endtabular
+   \parskip=\belowdisplayskip\par\noindent
+   \ignorespacesafterend}
+
+\newcommand{\framedhslinecorrect}[2]%
+  {#1[#2]}
+
+\newcommand{\framedhs}{\sethscode{framedhscode}}
+
+% The inlinehscode environment is an experimental environment
+% that can be used to typeset displayed code inline.
+
+\newenvironment{inlinehscode}%
+  {\(\def\column##1##2{}%
+   \let\>\undefined\let\<\undefined\let\\\undefined
+   \newcommand\>[1][]{}\newcommand\<[1][]{}\newcommand\\[1][]{}%
+   \def\fromto##1##2##3{##3}%
+   \def\nextline{}}{\) }%
+
+\newcommand{\inlinehs}{\sethscode{inlinehscode}}
+
+% The joincode environment is a separate environment that
+% can be used to surround and thereby connect multiple code
+% blocks.
+
+\newenvironment{joincode}%
+  {\let\orighscode=\hscode
+   \let\origendhscode=\endhscode
+   \def\endhscode{\def\hscode{\endgroup\def\@currenvir{hscode}\\}\begingroup}
+   %\let\SaveRestoreHook=\empty
+   %\let\ColumnHook=\empty
+   %\let\resethooks=\empty
+   \orighscode\def\hscode{\endgroup\def\@currenvir{hscode}}}%
+  {\origendhscode
+   \global\let\hscode=\orighscode
+   \global\let\endhscode=\origendhscode}%
+
+\makeatother
+\EndFmtInput
+%
+\begin{document}
+My first attempt at producing something remotely close to my Propositional
+Checker website. A modified version of the RqDataUpload.hs source from the
+Happstack Crash Course.
+
+The advice given to me is that I need to have two pages generated. A
+ServerPart Response is a page. One page will setup the form to collect a
+proposition from the student and post it, and the next page will parse that
+information and generate a Response page, which will display whether the
+proposition is correct or incorrect, and possibly provide feedback.
+
+Possibly use 'lookInput' with the RqData monad. It actually turned out that I
+could just use 'look'.
+
+I will need to process the string I get and then display the result.
+
+\begin{tabbing}\tt
+~\char123{}\char45{}\char35{}~LANGUAGE~OverloadedStrings~\char35{}\char45{}\char125{}\\
+\tt ~import~Control\char46{}Monad~~~~~~~~~~~~~~~~~~~~~~\char40{}msum\char41{}\\
+\tt ~import~Happstack\char46{}Server~~~~~~~~~~~~~~~~~~~\char40{}Response\char44{}~ServerPart\char44{}~\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~Method\char40{}GET\char44{}~POST\char41{}\char44{}~methodM\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char44{}~defaultBodyPolicy\char44{}~dir\char44{}~getDataFn\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char44{}~look\char44{}~lookInput\char44{}~fileServe\char44{}~nullDir\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char44{}~notFound\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char44{}~nullConf\char44{}~ok\char44{}~simpleHTTP\char44{}~toResponse\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char44{}~seeOther\char41{}\\
+\tt ~import~Text\char46{}Blaze~~~~~~~~~~~~~~~~~~~~~~~~~as~B\\
+\tt ~import~Text\char46{}Blaze\char46{}Html4\char46{}Strict~~~~~~~~~~~~as~B~hiding~\char40{}map\char41{}\\
+\tt ~import~Text\char46{}Blaze\char46{}Html4\char46{}Strict\char46{}Attributes~as~B~hiding~\char40{}dir\char44{}~title\char41{}~\\
+\tt ~\\
+\tt ~import~PropChecker~as~T\\
+\tt ~import~PropParser~as~P
+\end{tabbing}
+
+For now I will import my tautology check until I can further understand how
+happstack works.
+
+\begin{tabbing}\tt
+~main~\char58{}\char58{}~IO~\char40{}\char41{}\\
+\tt ~main~\char61{}~simpleHTTP~nullConf~\char36{}~propcheck
+\end{tabbing}
+
+For 'dir "feedback"' has methodM POST attached to it in order match on the
+the specific HTTP request, and if it does match, then produce the page.
+This way, anyone trying to make a request on 'feedback' will in
+this case go back to the home page.  Alternatively, we can nest another msum in
+'dir "feedback"' and generate an error message that refers to specifically to
+this case. I have taken this approach because it allows me to decide if in the
+future I decide to remove the 'errorPage' or add more possibilities simply by
+adding or subtratcing elements from the nested msum.
+
+nullDir will check if the path is non-empty, and if it is, it the handler will
+move onto the next item, which is notExist, my personalized 404 message. I
+prefer my own, because I believe it can add a sense of user-friendliness.
+
+It's interesting to note, that since I am using overloaded strings to make life
+easier using blazeHtml, the string "/" needs to have it's type declared
+explicitly because it doesn't know which type to choose. Another way around this
+is to move propCheck into separate module, in order to avoid having to declare
+the types explicitly, and this will be preferred when the website becomes more
+complex, in order to have cleaner code.
+
+\begin{tabbing}\tt
+~propcheck~\char58{}\char58{}~ServerPart~Response\\
+\tt ~propcheck~\char61{}~\\
+\tt ~~~~~msum~\char91{}~dir~\char34{}feedback\char34{}~\char36{}~msum~\char91{}~methodM~POST~\char62{}\char62{}~feedback\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char44{}~errorPage\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char93{}\\
+\tt ~~~~~~~~~~\char44{}~dir~\char34{}static\char34{}~\char36{}~fileServe~\char91{}\char93{}~\char34{}\char46{}\char34{}~\\
+\tt ~~~~~~~~~~\char44{}~nullDir~\char62{}\char62{}~propForm\\
+\tt ~~~~~~~~~~\char44{}~notExist\\
+\tt ~~~~~~~~~~\char93{}
+\end{tabbing}
+
+  --       , seeOther ("/" :: String) (toResponse ("/" :: String))
+
+\begin{tabbing}\tt
+~propForm~\char58{}\char58{}~ServerPart~Response\\
+\tt ~propForm~\char61{}~ok~\char36{}~toResponse~\char36{}\\
+\tt ~~~~~html~\char36{}~do\\
+\tt ~~~~~~~B\char46{}head~\char36{}~do\\
+\tt ~~~~~~~~~title~\char34{}Propositional~Equivalance~Checker\char34{}\\
+\tt ~~~~~~~B\char46{}h1~\char36{}~do\\
+\tt ~~~~~~~~~text~\char34{}Peter\char39{}s~Mega~Ultra~Propositional~Equivalence~Checker\char34{}\\
+\tt ~~~~~~~B\char46{}body~\char36{}~do\\
+\tt ~~~~~~~~~p~\char40{}string~\char36{}~question1\char41{}\\
+\tt ~~~~~~~~~p~\char34{}Given\char58{}\char34{}\\
+\tt ~~~~~~~~~ul~\char36{}~li~\char36{}~text~\char34{}R1L~is~not~equivalent~to~R1T\char34{}\\
+\tt ~~~~~~~~~ul~\char36{}~li~\char36{}~text~\char34{}R2L~is~not~equivalent~to~R2T\char34{}\\
+\tt ~~~~~~~B\char46{}div~\char36{}~do\\
+\tt ~~~~~~~~~\\
+\tt ~~~~~~~B\char46{}div~\char36{}~do\\
+\tt ~~~~~~~~~p~\char40{}string~\char36{}~instructions\char41{}\\
+\tt ~~~~~~~~~form~\char33{}~enctype~\char34{}multipart\char47{}form\char45{}data\char34{}~\char33{}~B\char46{}method~\char34{}POST\char34{}~\char33{}~action~\char34{}\char47{}feedback\char34{}~\char36{}~do\\
+\tt ~~~~~~~~~~~~~~input~\char33{}~type\char95{}~\char34{}text\char34{}~\char33{}~name~\char34{}user\char95{}prop\char34{}~\char33{}~size~\char34{}40\char34{}~\char33{}~maxlength~\char34{}40\char34{}\\
+\tt ~~~~~~~~~~~~~~input~\char33{}~type\char95{}~\char34{}submit\char34{}~\char33{}~name~\char34{}check\char95{}prop\char34{}~\char33{}~value~\char34{}Check~this~proposition\char34{}\\
+\tt ~~~~~~~~~~~~~~input~\char33{}~type\char95{}~\char34{}reset\char34{}~\char33{}~name~\char34{}clear\char95{}prop\char34{}~\char33{}~value~\char34{}Clear\char34{}\\
+\tt ~\\
+\tt ~instructions~\char58{}\char58{}~String\\
+\tt ~instructions~\char61{}~~\char34{}Enter~a~proposition~that~describes~this~situation\char46{}~\char34{}\\
+\tt ~\\
+\tt ~question1~\char58{}\char58{}~String\\
+\tt ~question1~\char61{}~~\char34{}\char91{}\char46{}\char46{}\char46{}\char93{}~the~king~explained~to~the~prisoner~that~each~of~the~two~\char34{}\\
+\tt ~~~~~~~~~~~\char43{}\char43{}~\char34{}rooms~contained~either~a~lady~or~a~tiger\char44{}~but~it~could~be~that~\char34{}\\
+\tt ~~~~~~~~~~~\char43{}\char43{}~\char34{}there~were~tigers~in~both~rooms\char44{}~or~ladies~in~both~rooms\char44{}~or~\char34{}\\
+\tt ~~~~~~~~~~~\char43{}\char43{}~\char34{}then~again\char44{}~maybe~one~room~contained~a~lady~and~the~other~room~\char34{}\\
+\tt ~~~~~~~~~~~\char43{}\char43{}~\char34{}a~tiger\char46{}\char34{}~~~~~~~
+\end{tabbing}
+
+So far, I know how to get data from a form and display it, as well as do any
+necessary calculations that gives me a value to display. My next problem is
+getting the error message from the Parser in case the user enters a string
+that can't be parsed, and displaying this error message to the user, which
+should be helpful to the user.
+
+Current Situation: 
+\begin{enumerate}
+        \item If a string that can't be parsed is encountered then 'feedback' does
+           not load at all.
+        \item I still need to organize the layout of my page and how responses for
+           each case will be handled
+\end{enumerate}
+
+\begin{tabbing}\tt
+~feedback~\char58{}\char58{}~ServerPart~Response\\
+\tt ~feedback~\char61{}~\\
+\tt ~~~~do~r~\char60{}\char45{}~getDataFn~\char40{}defaultBodyPolicy~\char34{}\char47{}tmp\char47{}\char34{}~1000~1000~1000\char41{}~\char36{}~look~\char34{}user\char95{}prop\char34{}\\
+\tt ~~~~~~~ok~\char36{}~toResponse~\char36{}\\
+\tt ~~~~~~~~~~html~\char36{}~do\\
+\tt ~~~~~~~~~~~~B\char46{}head~\char36{}~do\\
+\tt ~~~~~~~~~~~~~~title~\char34{}Prop~Feedback\char34{}\\
+\tt ~~~~~~~~~~~~B\char46{}h2~\char36{}~do\\
+\tt ~~~~~~~~~~~~~~text~\char34{}Feedback~on~given~Proposition\char34{}~~~~~~~~~~~\\
+\tt ~~~~~~~~~~~~~~img~\char33{}~src~\char34{}\char47{}static\char47{}lambda\char46{}gif\char34{}~\char33{}~alt~\char34{}lambda\char34{}~\char33{}~width~\char34{}40\char34{}~\char33{}~height~\char34{}40\char34{}\\
+\tt ~~~~~~~~~~~~B\char46{}body~\char36{}~do\\
+\tt ~~~~~~~~~~~~~~mkBody~r\\
+\tt ~~~~~where\\
+\tt ~~~~~~~mkBody~\char40{}Left~errs\char41{}~\char61{}\\
+\tt ~~~~~~~~~~~do~p~\char36{}~\char34{}The~following~error~occurred\char58{}\char34{}\\
+\tt ~~~~~~~~~~~~~~mapM\char95{}~\char40{}p~\char46{}~string\char41{}~errs\\
+\tt ~~~~~~~mkBody~\char40{}Right~theprop\char41{}~\char61{}~do\\
+\tt ~~~~~~~~~~~~~~~~~B\char46{}h3~\char36{}~do\\
+\tt ~~~~~~~~~~~~~~~~~~~text~\char34{}Analysis\char34{}\\
+\tt ~~~~~~~~~~~~~~~~~isEquivalent~\char40{}P\char46{}evalProp~theprop~prop1~rests1\char41{}~theprop\\
+\tt ~\\
+\tt ~isEquivalent~~~~~~~~~~~~~~~\char58{}\char58{}~String~\char45{}\char62{}~String~\char45{}\char62{}~Html~b\\
+\tt ~isEquivalent~\char34{}True\char34{}~~prop~~\char61{}~~p~\char40{}string~\char36{}~\char34{}Your~proposition~\char39{}\char34{}~\char43{}\char43{}~prop~\char43{}\char43{}~\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char34{}\char39{}~correctly~describes~this~situation\char46{}\char34{}\char41{}\\
+\tt ~isEquivalent~\char34{}False\char34{}~prop~~\char61{}~~do\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~p~\char40{}string~\char36{}~\char34{}Your~proposition~\char39{}\char34{}~\char43{}\char43{}~prop~\char43{}\char43{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char34{}\char39{}~incorrectly~describes~this~situation\char46{}\char34{}\char41{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~B\char46{}h4~\char36{}~text~\char34{}Here\char39{}s~a~tip\char58{}~\char34{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~p~\char40{}string~\char36{}~\char34{}When~\char34{}~\char43{}\char43{}~evalDisagree~prop~prop1~rests1~\char43{}\char43{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char34{}Carefully~look~over~the~\char34{}~\char43{}\char43{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char34{}information~that~is~being~given~to~you~and~try~again\char46{}\char34{}\char41{}\\
+\tt ~isEquivalent~error~~~prop~~\char61{}~~do\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~p~\char40{}string~\char36{}~\char40{}\char34{}\char39{}\char34{}~\char43{}\char43{}~prop~\char43{}\char43{}~\char34{}\char39{}~is~not~a~correctly\char34{}~\char43{}\char43{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\char34{}~written~proposition\char46{}\char34{}\char41{}\char41{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~B\char46{}h4~\char36{}~text~\char34{}Check~\char34{}\\
+\tt ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~p~\char40{}string~\char36{}~betterError~error\char41{}\\
+\tt ~\\
+\tt ~~\\
+\tt ~\\
+\tt ~\char45{}\char45{}~Enter~your~restrictions~here\\
+\tt ~rests1~\char58{}\char58{}~Rests\\
+\tt ~rests1~\char61{}~~\char91{}~Not~\char40{}Equiv~\char40{}Var~\char39{}a\char39{}\char41{}~\char40{}Var~\char39{}c\char39{}\char41{}\char41{}\\
+\tt ~~~~~~~~~~~\char44{}~Not~\char40{}Equiv~\char40{}Var~\char39{}b\char39{}\char41{}~\char40{}Var~\char39{}d\char39{}\char41{}\char41{}\\
+\tt ~~~~~~~~~~~\char93{}\\
+\tt ~\\
+\tt ~prop1~\char58{}\char58{}~String\\
+\tt ~prop1~\char61{}~~\char34{}\char40{}a~v~b\char41{}~\char38{}~\char40{}c~v~d\char41{}\char34{}\\
+\tt ~\\
+\tt ~errorPage~\char58{}\char58{}~ServerPart~Response\\
+\tt ~errorPage~\char61{}~ok~\char36{}~toResponse~\char36{}\\
+\tt ~~~~~html~\char36{}~do\\
+\tt ~~~~~~~B\char46{}head~\char36{}~do\\
+\tt ~~~~~~~~~title~\char34{}Error~Page\char34{}\\
+\tt ~~~~~~~B\char46{}h1~\char36{}~do\\
+\tt ~~~~~~~~~text~\char34{}Oops\char33{}\char34{}\\
+\tt ~~~~~~~B\char46{}body~\char36{}~do\\
+\tt ~~~~~~~~~p~\char36{}~\char34{}It~seems~you~tried~to~check~your~feedback~without~submitting~a~proposition\char46{}\char34{}\\
+\tt ~~~~~~~B\char46{}div~\char36{}~do\\
+\tt ~~~~~~~~~p~\char36{}~\char34{}\char34{}\\
+\tt ~\\
+\tt ~notExist~\char58{}\char58{}~ServerPart~Response\\
+\tt ~notExist~\char61{}~notFound~\char36{}~toResponse~\char36{}\\
+\tt ~~~~~html~\char36{}~do\\
+\tt ~~~~~~~B\char46{}head~\char36{}~do\\
+\tt ~~~~~~~~~title~\char34{}Error~Page\char34{}\\
+\tt ~~~~~~~B\char46{}h1~\char36{}~do\\
+\tt ~~~~~~~~~text~\char34{}Sorry\char33{}\char34{}\\
+\tt ~~~~~~~B\char46{}body~\char36{}~do\\
+\tt ~~~~~~~~~p~\char36{}~\char34{}This~page~doesn\char39{}t~exist\char44{}~maybe~you~can~ask~for~it~to~be~in~the~next~version\char46{}\char34{}\\
+\tt ~~~~~~~B\char46{}div~\char36{}~do\\
+\tt ~~~~~~~~~p~\char36{}~\char34{}\char34{}\\
+\tt ~\\
+\tt ~\\
+\tt ~\char45{}\char45{}~This~provides~a~better~error~message\\
+\tt ~betterError~~~~~~~~~~~~~\char58{}\char58{}~String~\char45{}\char62{}~String\\
+\tt ~betterError~err~~~~~~~~~\char61{}~~drop~8~\char40{}filter~\char40{}\char47{}\char61{}~\char39{}\char41{}\char39{}\char41{}~err\char41{}
+\end{tabbing}
+\end{document}

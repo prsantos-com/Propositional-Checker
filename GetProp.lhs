@@ -1,3 +1,6 @@
+\documentclass{article}
+%include polycode.fmt
+\begin{document}
 My first attempt at producing something remotely close to my Propositional
 Checker website. A modified version of the RqDataUpload.hs source from the
 Happstack Crash Course.
@@ -27,7 +30,7 @@ import Text.Blaze                         as B
 import Text.Blaze.Html4.Strict            as B hiding (map)
 import Text.Blaze.Html4.Strict.Attributes as B hiding (dir, title) 
 
-import Myitautology as T
+import PropChecker as T
 import PropParser as P
 \end{code}
 
@@ -78,19 +81,25 @@ propForm :: ServerPart Response
 propForm = ok $ toResponse $
     html $ do
       B.head $ do
-        title "Upload Form"
+        title "Propositional Equivalance Checker"
       B.h1 $ do
-        text "Peter's Mega Ultra Propositional Checker"
+        text "Peter's Mega Ultra Propositional Equivalence Checker"
       B.body $ do
         p (string $ question1)
+        p "Given:"
+        ul $ li $ text "R1L is not equivalent to R1T"
+        ul $ li $ text "R2L is not equivalent to R2T"
       B.div $ do
         
       B.div $ do
-        p "Enter a proposition if you dare."
+        p (string $ instructions)
         form ! enctype "multipart/form-data" ! B.method "POST" ! action "/feedback" $ do
              input ! type_ "text" ! name "user_prop" ! size "40" ! maxlength "40"
              input ! type_ "submit" ! name "check_prop" ! value "Check this proposition"
              input ! type_ "reset" ! name "clear_prop" ! value "Clear"
+
+instructions :: String
+instructions =  "Enter a proposition that describes this situation. "
 
 question1 :: String
 question1 =  "[...] the king explained to the prisoner that each of the two "
@@ -132,8 +141,36 @@ feedback =
           do p $ "The following error occurred:"
              mapM_ (p . string) errs
       mkBody (Right theprop) = do
-                p (string $ isTautology (P.evalProp theprop) theprop)
+                B.h3 $ do
+                  text "Analysis"
+                isEquivalent (P.evalProp theprop prop1 rests1) theprop
 
+isEquivalent               :: String -> String -> Html b
+isEquivalent "True"  prop  =  p (string $ "Your proposition '" ++ prop ++ 
+                                "' correctly describes this situation.")
+isEquivalent "False" prop  =  do
+                                p (string $ "Your proposition '" ++ prop ++
+                                 "' incorrectly describes this situation.")
+                                B.h4 $ text "Here's a tip: "
+                                p (string $ "When " ++ evalDisagree prop prop1 rests1 ++
+                                 "Carefully look over the " ++
+                                 "information that is being given to you and try again.")
+isEquivalent error   prop  =  do
+                                p (string $ ("'" ++ prop ++ "' is not a correctly" ++
+                                  " written proposition."))
+                                B.h4 $ text "Check "
+                                p (string $ betterError error)
+
+ 
+
+-- Enter your restrictions here
+rests1 :: Rests
+rests1 =  [ Not (Equiv (Var 'a') (Var 'c'))
+          , Not (Equiv (Var 'b') (Var 'd'))
+          ]
+
+prop1 :: String
+prop1 =  "(a v b) & (c v d)"
 
 errorPage :: ServerPart Response
 errorPage = ok $ toResponse $
@@ -159,12 +196,10 @@ notExist = notFound $ toResponse $
       B.div $ do
         p $ ""
 
-isTautology             :: String -> String -> String
-isTautology "True"  prop   =  "The proposition '" ++ prop ++ "' is a tautology."
-isTautology "False" prop   =  "The proposition '" ++ prop ++ "' is NOT a tautology."
-isTautology error   prop   =  prop ++ " is not correctly written proposition\n" ++
-                              "This should help you determine the problem: \n" ++
-                              error
 
+-- This provides a better error message
+betterError             :: String -> String
+betterError err         =  drop 8 (filter (/= ')') err)
 
 \end{code}
+\end{document}
